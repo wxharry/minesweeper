@@ -1,22 +1,40 @@
 import React, {useEffect, useState} from 'react';
+import useLongPress from './util/useLongPress';
 import './Minesweeper.css';
 
-const Square = ({value, onClick}:any) => {
+const Square = ({value, onClick, onLongPress}:any) => {
+  const longPressEvent = useLongPress({onLongPress, onClick});
+  const showValue = (value:any) => {
+    switch (value) {
+      case null:
+      case 0:
+        return "";
+      case -1:
+        return "☠️";
+      case -2:
+        return "🚩"
+      default:
+        return value;
+    }
+  }
   return (
     <button className={value === null ? "square": "square-grey"}
-            onClick={onClick}
+            {...longPressEvent}
             >
-      {(value === null || value === 0) ? "" : (value < 0 ? "☠️" : value)}
+      {showValue(value)}
     </button>
   );
 }
 
-const renderRow = ({cover, row, rowIdx, handleClick}:any) => {
+const renderRow = ({cover, row, rowIdx, handleClick, onLongPress}:any) => {
   return (
     <div>
       { row.map((ele: any, colIdx:any) => {
-        return <Square value={cover[rowIdx][colIdx]} row={rowIdx} col={colIdx} cover={cover}
-                onClick={()=>{return handleClick({row:rowIdx, col:colIdx})}}/>}) }
+        return <Square value={cover[rowIdx][colIdx]}
+                onClick={()=>{return handleClick({row:rowIdx, col:colIdx})}}
+                onLongPress={()=>{return onLongPress({row:rowIdx, col:colIdx})}}
+                />
+                })}
     </div>
   )
 }
@@ -79,7 +97,7 @@ const isFinished = ({board, cover}: any) => {
   const col = board[0].length;
   for (let i = 0; i < row; i += 1) {
     for (let j = 0; j < col; j += 1) {
-      if (cover[i][j] === null && board[i][j] >= 0) {
+      if (cover[i][j] === null || board[i][j] < 0 && cover[i][j] !== -2) {
         return false;
       }
     }
@@ -105,13 +123,23 @@ const Board = () => {
     _cover[row][col] = _board[row][col];
     setCover(_cover);
     if (board[row][col] < 0) {
+      console.log("Boom! Game Over!");
       setState(-1);
     }
   }
+
+  const onLongPress = ({row, col}:any) => {
+    const _cover = cover.slice();
+    _cover[row][col] = _cover[row][col] === null ? -2 : null;
+    
+    setCover(_cover);
+  };
+
   useEffect(()=>{
-    console.log("change on cover");
+    // console.log("change on cover");
     if (isFinished({board, cover})) {
       setState(1);
+      console.log("You win! Well Done.");
     }
   }, [cover])
 
@@ -127,7 +155,7 @@ const Board = () => {
         <div> {state === 0 ? '🤨':( state > 0 ? '😏' : '😵‍💫')} </div>
         {/* <div> {time}</div> */}
       </div>
-      { board.map((row, rowIdx) => { return renderRow({cover, row, rowIdx, handleClick})}) }
+      { board.map((row, rowIdx) => { return renderRow({cover, row, rowIdx, handleClick, onLongPress})}) }
     </div>
   )
 }
