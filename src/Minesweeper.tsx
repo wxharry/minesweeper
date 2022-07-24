@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import useLongPress from './util/useLongPress';
+import Timer from './timer';
 import './Minesweeper.css';
 
 const Square = ({value, onClick, onLongPress}:any) => {
@@ -112,12 +113,15 @@ const Board = () => {
   const [state, setState] = useState(0);
   const [cover, setCover] = useState(Array(height).fill(null).map(() => Array(width).fill(null)))
   const [board, setBoard] = useState(initBoard({row: height, col: width, mineNumber}));
+  const [timerState, setTimerState] = useState(false);
+  const [resetState, setReset] = useState(true);
 
   const handleClick = ({row, col}:any) => {
     if (state !== 0) {
       handleReset();
       return;
     }
+    setTimerState(true);
     const _board = board.slice();
     const _cover = cover.slice();
     _cover[row][col] = _board[row][col];
@@ -125,6 +129,7 @@ const Board = () => {
     if (board[row][col] < 0) {
       console.log("Boom! Game Over!");
       setState(-1);
+      setTimerState(false);
     }
   }
 
@@ -139,23 +144,29 @@ const Board = () => {
     // console.log("change on cover");
     if (isFinished({board, cover})) {
       setState(1);
+      setTimerState(false);
       console.log("You win! Well Done.");
     }
   }, [cover])
 
   const handleReset = () => {
+    // console.log("handle reset");
     setCover(Array(height).fill(null).map(() => Array(width).fill(null)));
     setBoard(initBoard({row: height, col: width, mineNumber}))
     setState(0);
+    setReset(!resetState);
   }
+
   return (
     <div>
       <div className='board-top'>
-        {/* <div> {mineExists} </div> */}
-        <div> {state === 0 ? '🤨':( state > 0 ? '😏' : '😵‍💫')} </div>
-        {/* <div> {time}</div> */}
+        <div> {} </div>
+        <div> {state === 0 ? '🤨':( state > 0 ? '😎' : '😵‍💫')} </div>
+        <Timer active={timerState} resetTimer={resetState}/>
       </div>
-      { board.map((row, rowIdx) => { return renderRow({cover, row, rowIdx, handleClick, onLongPress})}) }
+      <div className='board-row'>
+        { board.map((row, rowIdx) => { return renderRow({cover, row, rowIdx, handleClick, onLongPress})}) }
+      </div>
     </div>
   )
 }
