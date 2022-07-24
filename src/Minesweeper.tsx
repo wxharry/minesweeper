@@ -75,13 +75,15 @@ const valid2place = ({board, x, y}:any) => {
 const initBoard = ({row, col, mineNumber}: any) => {
   const board = Array(row).fill(null).map(() => Array(col).fill(0));
   // place mines
-  for (let i = 0; i < mineNumber; i += 1) {
+  for (let i = 0; i < mineNumber; ) {
     let x = Math.floor(Math.random() * row);
     let y = Math.floor(Math.random() * col);
     if (board[x][y] === 0 && valid2place({board, x, y})) {
       board[x][y] = -1;
+      i += 1;
     }
   }
+  
   // calculate numbers
   for (let i = 0; i < row; i += 1) {
     for (let j = 0; j < col; j += 1) {
@@ -108,8 +110,8 @@ const isFinished = ({board, cover}: any) => {
 
 const Board = () => {
   const height=5, width=5;
-  const mineNumber = 5;
-  const [mineExists, setMineExists] = useState(mineNumber);
+  const initMineNumber = 5
+  const [mineNumber, setMineNumber] = useState(initMineNumber);
   const [state, setState] = useState(0);
   const [cover, setCover] = useState(Array(height).fill(null).map(() => Array(width).fill(null)))
   const [board, setBoard] = useState(initBoard({row: height, col: width, mineNumber}));
@@ -134,9 +136,18 @@ const Board = () => {
   }
 
   const onLongPress = ({row, col}:any) => {
+    if (state !== 0) {
+      handleReset();
+      return;
+    }
     const _cover = cover.slice();
-    _cover[row][col] = _cover[row][col] === null ? -2 : null;
-    
+    if (_cover[row][col] === null) {
+      _cover[row][col] = -2;
+      setMineNumber(mineNumber => mineNumber - 1);
+    } else { // if flag out a mine
+      _cover[row][col] = null;
+      setMineNumber(mineNumber => mineNumber + 1);
+    }
     setCover(_cover);
   };
 
@@ -151,8 +162,10 @@ const Board = () => {
 
   const handleReset = () => {
     // console.log("handle reset");
+    setMineNumber(initMineNumber);
+    // console.log("mineNumber", mineNumber); //why is mineNumber 0?
+    setBoard(initBoard({row: height, col: width, mineNumber:initMineNumber}))
     setCover(Array(height).fill(null).map(() => Array(width).fill(null)));
-    setBoard(initBoard({row: height, col: width, mineNumber}))
     setState(0);
     setReset(!resetState);
   }
@@ -160,7 +173,7 @@ const Board = () => {
   return (
     <div>
       <div className='board-top'>
-        <div> {} </div>
+        <div> {mineNumber} </div>
         <div> {state === 0 ? '🤨':( state > 0 ? '😎' : '😵‍💫')} </div>
         <Timer active={timerState} resetTimer={resetState}/>
       </div>
